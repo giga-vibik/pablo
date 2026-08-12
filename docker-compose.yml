@@ -1,0 +1,48 @@
+services:
+  postgres:
+    container_name: pablo_db
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pablo_baron_epta
+      POSTGRES_PASSWORD: f7c14c33-4bba-44e2-bdd5-4bd8115672fd
+      POSTGRES_DB: pablo
+    ports:
+      - "5434:5432"
+    volumes:
+      - pablo_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - pablo_network
+
+  service:
+    container_name: pablo_service
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - pablo_network
+
+  # Отдельный процесс: публикацию по расписанию нельзя вешать на API-инстанс,
+  # иначе при нескольких репликах один пост уедет несколько раз.
+  publisher:
+    container_name: pablo_publisher
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.publisher
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - pablo_network
+
+volumes:
+  pablo_pgdata:
+
+networks:
+  pablo_network:
+    driver: bridge

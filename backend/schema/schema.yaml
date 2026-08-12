@@ -1,0 +1,533 @@
+openapi: 3.1.0
+info:
+  title: Pablo
+  description: Публикация контента в instagram, tiktok, youtube shorts и threads через zernio
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  /v1/login:
+    post:
+      tags:
+        - auth
+      description: Логин внутреннего пользователя
+      summary: Login
+      operationId: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - login
+                - password
+              properties:
+                login:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - access_token
+                properties:
+                  access_token:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/posts:
+    get:
+      tags:
+        - posts
+      description: Список постов
+      summary: List posts
+      operationId: ListPosts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - posts
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Post"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - posts
+      description: Создать пост
+      summary: Create post
+      operationId: CreatePost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/posts/{post_id}:
+    get:
+      tags:
+        - posts
+      description: Получить пост
+      summary: Get post
+      operationId: GetPost
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags:
+        - posts
+      description: Удалить пост
+      summary: Delete post
+      operationId: DeletePost
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/posts/{post_id}/publish:
+    post:
+      tags:
+        - posts
+      description: Опубликовать пост прямо сейчас
+      summary: Publish post
+      operationId: PublishPost
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/posts/{post_id}/media:
+    post:
+      tags:
+        - media
+      description: Загрузить видео к посту
+      summary: Upload video
+      operationId: UploadVideo
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Media"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/accounts:
+    get:
+      tags:
+        - accounts
+      description: Список подключённых аккаунтов
+      summary: List accounts
+      operationId: ListAccounts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accounts
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Account"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/accounts/sync:
+    post:
+      tags:
+        - accounts
+      description: Синхронизировать аккаунты с zernio
+      summary: Sync accounts
+      operationId: SyncAccounts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accounts
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Account"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/accounts/connect_url:
+    get:
+      tags:
+        - accounts
+      description: Ссылка для подключения аккаунта площадки
+      summary: Get connect url
+      operationId: GetConnectURL
+      parameters:
+        - name: platform
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Platform"
+        - name: redirect_url
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - auth_url
+                properties:
+                  auth_url:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    Platform:
+      type: string
+      enum:
+        - instagram
+        - tiktok
+        - youtube
+        - threads
+
+    PostKind:
+      type: string
+      enum:
+        - video
+        - text
+
+    PostStatus:
+      type: string
+      enum:
+        - draft
+        - scheduled
+        - publishing
+        - published
+        - partially_published
+        - failed
+
+    TargetStatus:
+      type: string
+      enum:
+        - pending
+        - publishing
+        - published
+        - failed
+
+    CreatePostRequest:
+      type: object
+      required:
+        - kind
+        - targets
+      properties:
+        kind:
+          $ref: "#/components/schemas/PostKind"
+        content:
+          type: string
+        scheduled_at:
+          type: string
+          format: date-time
+        targets:
+          type: array
+          items:
+            type: object
+            required:
+              - platform
+            properties:
+              platform:
+                $ref: "#/components/schemas/Platform"
+              caption:
+                type: string
+
+    Target:
+      type: object
+      required:
+        - id
+        - platform
+        - status
+      properties:
+        id:
+          type: string
+        platform:
+          $ref: "#/components/schemas/Platform"
+        caption:
+          type: string
+        status:
+          $ref: "#/components/schemas/TargetStatus"
+        external_post_id:
+          type: string
+        external_url:
+          type: string
+        error_message:
+          type: string
+
+    Media:
+      type: object
+      required:
+        - id
+        - file_name
+        - public_url
+      properties:
+        id:
+          type: string
+        file_name:
+          type: string
+        public_url:
+          type: string
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+
+    Post:
+      type: object
+      required:
+        - id
+        - kind
+        - status
+        - targets
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: "#/components/schemas/PostKind"
+        content:
+          type: string
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        scheduled_at:
+          type: string
+          format: date-time
+        published_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Target"
+        media:
+          type: array
+          items:
+            $ref: "#/components/schemas/Media"
+
+    Account:
+      type: object
+      required:
+        - id
+        - platform
+        - is_active
+      properties:
+        id:
+          type: string
+        platform:
+          $ref: "#/components/schemas/Platform"
+        username:
+          type: string
+        is_active:
+          type: boolean
+        synced_at:
+          type: string
+          format: date-time

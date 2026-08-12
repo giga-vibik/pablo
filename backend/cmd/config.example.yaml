@@ -1,0 +1,32 @@
+DB:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "pablo"
+
+Debug_flag:
+  flag: true
+
+# Бакет должен отдавать объекты публично: zernio скачивает медиа по URL.
+S3:
+  endpoint: "https://storage.yandexcloud.net"
+  region: "ru-central1"
+  bucket: "pablo-media"
+  accessKey: ""
+  secretKey: ""
+  publicBase: "https://pablo-media.storage.yandexcloud.net"
+
+# Профиль zernio клиент находит сам: берёт первый, а если его нет — создаёт.
+Zernio:
+  apiKey: ""
+  baseURL: "https://zernio.com/api/v1"
+
+Auth:
+  secret: "change-me"
+  login: "pablo"
+  password: "change-me"
+
+Publisher:
+  tickSeconds: 30
+  batchSize: 10
