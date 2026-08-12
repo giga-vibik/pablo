@@ -10,12 +10,11 @@ Debug_flag:
 
 # Бакет должен отдавать объекты публично: zernio скачивает медиа по URL.
 S3:
-  endpoint: "https://storage.yandexcloud.net"
+  accessKeyID: ""
+  secretAccessKey: ""
   region: "ru-central1"
-  bucket: "pablo-media"
-  accessKey: ""
-  secretKey: ""
-  publicBase: "https://pablo-media.storage.yandexcloud.net"
+  endpoint: "https://storage.yandexcloud.net"
+  bucketName: ""
 
 # Профиль zernio клиент находит сам: берёт первый, а если его нет — создаёт.
 Zernio:

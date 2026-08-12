@@ -35,16 +35,20 @@ func NewS3Storage(cfg config.S3) (Storage, error) {
 	sess, err := session.NewSession(&awsSDK.Config{
 		Region:      awsSDK.String(cfg.Region),
 		Endpoint:    awsSDK.String(cfg.Endpoint),
-		Credentials: credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, ""),
+		Credentials: credentials.NewStaticCredentials(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("s3: new session: %w", err)
 	}
 
+	// Публичный адрес собираем в path-style (endpoint/bucket/key): так работает
+	// и Yandex Object Storage, и MinIO, и любой другой S3-совместимый эндпоинт.
+	publicBase := strings.TrimRight(cfg.Endpoint, "/") + "/" + cfg.BucketName
+
 	return &storage{
 		client:     awsS3.New(sess),
-		bucket:     cfg.Bucket,
-		publicBase: strings.TrimRight(cfg.PublicBase, "/"),
+		bucket:     cfg.BucketName,
+		publicBase: publicBase,
 	}, nil
 }
 

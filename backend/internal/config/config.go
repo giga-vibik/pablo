@@ -34,12 +34,11 @@ type DebugFlag struct {
 // S3 — хранилище видео. Бакет должен отдавать объекты публично: zernio
 // забирает медиа по URL, а не принимает файл.
 type S3 struct {
-	Endpoint   string `yaml:"endpoint"`
-	Region     string `yaml:"region"`
-	Bucket     string `yaml:"bucket"`
-	AccessKey  string `yaml:"accessKey"`
-	SecretKey  string `yaml:"secretKey"`
-	PublicBase string `yaml:"publicBase"` // напр. https://pablo.storage.yandexcloud.net
+	AccessKeyID     string `yaml:"accessKeyID"`
+	SecretAccessKey string `yaml:"secretAccessKey"`
+	Region          string `yaml:"region"`
+	Endpoint        string `yaml:"endpoint"`
+	BucketName      string `yaml:"bucketName"`
 }
 
 // Zernio — внешний агрегатор публикаций (getlate.dev).
