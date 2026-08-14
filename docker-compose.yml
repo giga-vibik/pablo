@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: f7c14c334bba44e2bdd54bd8115672fd
       POSTGRES_DB: pablo
     ports:
-      - "5440:5432"
+      - "5448:5432"
     volumes:
       - pablo_pgdata:/var/lib/postgresql/data
     restart: unless-stopped
