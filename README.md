@@ -15,8 +15,8 @@ backend/          Go, слоёная структура как в vibik_main
   internal/storage       postgres (squirrel)
   internal/integration   zernio, s3
   schema/                openapi + сгенерированный chi-server
-  migrations/            goose-совместимые миграции
-frontend/         React + Vite + TS
+  migrations/            golang-migrate (.up.sql / .down.sql)
+frontend/         React + Vite + TS, в проде раздаётся nginx
 ```
 
 ## Как это работает
@@ -32,35 +32,39 @@ frontend/         React + Vite + TS
 Заполните `backend/cmd/config.yaml`: ключ zernio, доступы к S3, логин/пароль.
 Профиль zernio указывать не нужно — клиент берёт первый существующий, а если профилей нет, создаёт «Pablo» сам.
 
-Миграции:
+### Через docker
 
 ```bash
-goose -dir backend/migrations postgres "host=localhost port=5434 user=pablo password=pablo dbname=pablo sslmode=disable" up
+docker compose up -d --build
 ```
 
-Бэкенд:
+Приложение открывается на **http://localhost** — `web` (nginx) раздаёт собранный фронт и проксирует `/v1` на `service`. Наружу торчит только он: API и интерфейс живут на одном origin, поэтому CORS не нужен.
+
+Миграции (первый запуск и после каждой новой):
+
+```bash
+docker compose run --rm migrate up
+```
+
+`config.yaml` монтируется с хоста, а не копируется в образ: в нём ключи, и правка настроек не должна требовать пересборки. Внутри compose база доступна как `postgres:5432` — именно это и должно стоять в `DB`.
+
+### Локально, без docker
+
+В `config.yaml` поменяйте `DB` на `localhost:5434`, затем:
 
 ```bash
 cd backend && go run ./cmd/service
 ```
 
-Воркер:
-
 ```bash
 cd backend && go run ./cmd/publisher_worker
 ```
-
-Фронт:
 
 ```bash
 cd frontend && npm install && npm run dev
 ```
 
-Всё вместе:
-
-```bash
-docker compose up --build
-```
+Vite поднимется на :5173 и проксирует `/v1` на :8080.
 
 ## Аккаунты
 

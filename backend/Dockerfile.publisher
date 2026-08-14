@@ -16,6 +16,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/publisher ./publisher
-COPY cmd/config.yaml ./cmd/config.yaml
+
+# config.yaml монтируется из docker-compose, см. Dockerfile сервиса.
 
 ENTRYPOINT ["./publisher"]

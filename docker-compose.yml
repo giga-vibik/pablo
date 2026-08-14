@@ -21,8 +21,25 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - postgres
+    volumes:
+      - ./backend/cmd/config.yaml:/app/cmd/config.yaml:ro
+    # Наружу порт не пробрасываем: единственный вход — web, он же раздаёт фронт
+    # и проксирует /v1. Так API и интерфейс лежат на одном origin, без CORS.
+    expose:
+      - "8080"
+    restart: unless-stopped
+    networks:
+      - pablo_network
+
+  web:
+    container_name: pablo_web
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - service
     ports:
-      - "8080:8080"
+      - "80:80"
     restart: unless-stopped
     networks:
       - pablo_network
@@ -36,7 +53,28 @@ services:
       dockerfile: Dockerfile.publisher
     depends_on:
       - postgres
+    volumes:
+      - ./backend/cmd/config.yaml:/app/cmd/config.yaml:ro
     restart: unless-stopped
+    networks:
+      - pablo_network
+
+  # Не поднимается вместе со всеми (profiles), запускается руками:
+  #   docker compose run --rm migrate up
+  # Миграции в формате golang-migrate: пары .up.sql / .down.sql.
+  migrate:
+    image: migrate/migrate:v4.18.1
+    profiles:
+      - tools
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend/migrations:/migrations
+    entrypoint:
+      - migrate
+      - -path=/migrations
+      - -database
+      - postgres://pablo_baron_epta:f7c14c334bba44e2bdd54bd8115672fd@postgres:5432/pablo?sslmode=disable
     networks:
       - pablo_network
 

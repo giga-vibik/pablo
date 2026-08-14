@@ -16,7 +16,9 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/service ./service
-COPY cmd/config.yaml ./cmd/config.yaml
+
+# config.yaml намеренно НЕ копируется в образ: в нём ключи, а правка настроек
+# не должна требовать пересборки. Он монтируется из docker-compose.
 
 EXPOSE 8080
 
