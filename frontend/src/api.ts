@@ -1,4 +1,4 @@
-import type { Account, Media, Platform, Post, PostKind } from './types'
+import type { Account, Media, Platform, Post, PostKind, PostStats } from './types'
 
 const TOKEN_KEY = 'pablo_token'
 
@@ -100,6 +100,10 @@ export function deletePost(postId: string): Promise<void> {
 
 export function publishPost(postId: string): Promise<Post> {
   return request(`/v1/posts/${postId}/publish`, { method: 'POST' })
+}
+
+export function getPostStats(postId: string): Promise<PostStats> {
+  return request(`/v1/posts/${postId}/stats`)
 }
 
 export function uploadVideo(postId: string, file: File): Promise<Media> {

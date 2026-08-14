@@ -108,6 +108,7 @@ func StartHttpServer(
 		router.Handle("/v1/posts", handler)
 		router.Handle("/v1/posts/{post_id}", handler)
 		router.Handle("/v1/posts/{post_id}/publish", handler)
+		router.Handle("/v1/posts/{post_id}/stats", handler)
 		router.Handle("/v1/posts/{post_id}/media", handler)
 		router.Handle("/v1/accounts", handler)
 		router.Handle("/v1/accounts/sync", handler)

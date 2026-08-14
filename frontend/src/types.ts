@@ -74,6 +74,49 @@ export const PLATFORM_COLORS: Record<Platform, string> = {
   threads: '#16150f',
 }
 
+export type StatsState = 'ready' | 'pending' | 'unavailable'
+
+export interface Metrics {
+  impressions?: number
+  reach?: number
+  views?: number
+  likes?: number
+  comments?: number
+  shares?: number
+  saves?: number
+  clicks?: number
+  engagement_rate?: number
+}
+
+export interface PlatformStats {
+  platform: Platform
+  state: StatsState
+  message?: string
+  username?: string
+  url?: string
+  last_updated?: string
+  metrics?: Metrics
+}
+
+export interface PostStats {
+  post_id: string
+  totals?: Metrics
+  platforms: PlatformStats[]
+}
+
+// Показываем в этом порядке. Площадки отдают разный набор: TikTok не сообщает
+// reach, YouTube — impressions, поэтому пустые метрики скрываем, а не рисуем нулями.
+export const METRIC_LABELS: [keyof Metrics, string][] = [
+  ['views', 'Просмотры'],
+  ['impressions', 'Показы'],
+  ['reach', 'Охват'],
+  ['likes', 'Лайки'],
+  ['comments', 'Комментарии'],
+  ['shares', 'Репосты'],
+  ['saves', 'Сохранения'],
+  ['clicks', 'Клики'],
+]
+
 // Лимиты подписи у площадок. Считаем, чтобы не отправлять заведомо обрезанное.
 export const CAPTION_LIMITS: Record<Platform, number> = {
   instagram: 2200,

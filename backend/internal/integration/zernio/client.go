@@ -394,6 +394,82 @@ func IsPublishedStatus(status string) bool {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Analytics
+// ─────────────────────────────────────────────────────────────
+
+// ErrAnalyticsUnavailable — zernio ответил 424: публикация в площадку не
+// удалась, статистике взяться неоткуда.
+var ErrAnalyticsUnavailable = errors.New("zernio: analytics unavailable (424)")
+
+// Metrics — набор счётчиков площадки. Не все площадки отдают всё: TikTok не
+// сообщает reach, YouTube — impressions. Отсутствующее приходит нулём, поэтому
+// «0» и «нет данных» на этом уровне неразличимы (см. PlatformAnalytics.Analytics).
+type Metrics struct {
+	Impressions    float64 `json:"impressions"`
+	Reach          float64 `json:"reach"`
+	Views          float64 `json:"views"`
+	Likes          float64 `json:"likes"`
+	Comments       float64 `json:"comments"`
+	Shares         float64 `json:"shares"`
+	Saves          float64 `json:"saves"`
+	Clicks         float64 `json:"clicks"`
+	EngagementRate float64 `json:"engagementRate"`
+	LastUpdated    *string `json:"lastUpdated"`
+}
+
+// PlatformAnalytics — статистика одной площадки внутри поста.
+// Analytics == nil означает «ещё не синхронизировано», а не «нули».
+type PlatformAnalytics struct {
+	Platform        string   `json:"platform"`
+	Status          string   `json:"status"`
+	PlatformPostID  string   `json:"platformPostId"`
+	AccountUsername string   `json:"accountUsername"`
+	PlatformPostURL *string  `json:"platformPostUrl"`
+	SyncStatus      string   `json:"syncStatus"`
+	Analytics       *Metrics `json:"analytics"`
+}
+
+type PostAnalytics struct {
+	PostID     string              `json:"postId"`
+	Status     string              `json:"status"`
+	SyncStatus string              `json:"syncStatus"`
+	Message    string              `json:"message"`
+	Analytics  *Metrics            `json:"analytics"`
+	Platforms  []PlatformAnalytics `json:"platformAnalytics"`
+}
+
+// IsPending — площадка ещё не отдала цифры. Публикация асинхронная, и первые
+// минуты после неё статистика легально пустая.
+func (p PostAnalytics) IsPending() bool {
+	return strings.EqualFold(strings.TrimSpace(p.SyncStatus), "pending")
+}
+
+// GetPostAnalytics забирает статистику одного поста zernio.
+// postID — это id поста в zernio (у нас лежит в target.external_post_id).
+func (c *Client) GetPostAnalytics(ctx context.Context, postID string) (PostAnalytics, error) {
+	if !c.IsConfigured() {
+		return PostAnalytics{}, ErrNotConfigured
+	}
+
+	if strings.TrimSpace(postID) == "" {
+		return PostAnalytics{}, errors.New("zernio.GetPostAnalytics: empty post id")
+	}
+
+	var parsed PostAnalytics
+	err := c.do(ctx, http.MethodGet, "/analytics?postId="+url.QueryEscape(postID), nil, &parsed)
+	if err != nil {
+		// 424 — не сбой запроса, а осмысленный ответ: публиковать не удалось.
+		if strings.Contains(err.Error(), "HTTP 424") {
+			return PostAnalytics{}, fmt.Errorf("%w: %s", ErrAnalyticsUnavailable, postID)
+		}
+
+		return PostAnalytics{}, err
+	}
+
+	return parsed, nil
+}
+
+// ─────────────────────────────────────────────────────────────
 // HTTP helpers
 // ─────────────────────────────────────────────────────────────
 

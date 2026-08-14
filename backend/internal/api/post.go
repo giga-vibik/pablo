@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	postDomain "github.com/pablo/backend/internal/domain/post"
+	"github.com/pablo/backend/internal/integration/zernio"
 	postService "github.com/pablo/backend/internal/service/post"
 	"github.com/pablo/backend/schema"
 )
@@ -179,6 +180,34 @@ func (s *Server) PublishPost(w http.ResponseWriter, r *http.Request, postId stri
 	}
 
 	writeJSON(w, http.StatusOK, toSchemaPost(post, nil))
+}
+
+func (s *Server) GetPostStats(w http.ResponseWriter, r *http.Request, postId string) {
+	ctx := r.Context()
+
+	postID, err := parsePostID(postId)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	stats, err := s.postService.GetPostStats(ctx, postID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeError(w, http.StatusBadRequest, "post not found")
+			return
+		}
+		if errors.Is(err, zernio.ErrNotConfigured) {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		log.Println("error: while getting post stats", err.Error())
+		writeError(w, http.StatusInternalServerError, "failed to get post stats")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toSchemaPostStats(stats))
 }
 
 func parsePostID(raw string) (postDomain.PostID, error) {

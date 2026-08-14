@@ -37,6 +37,27 @@ func (e Platform) Valid() bool {
 	}
 }
 
+// Defines values for PlatformStatsState.
+const (
+	PlatformStatsStatePending     PlatformStatsState = "pending"
+	PlatformStatsStateReady       PlatformStatsState = "ready"
+	PlatformStatsStateUnavailable PlatformStatsState = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the PlatformStatsState enum.
+func (e PlatformStatsState) Valid() bool {
+	switch e {
+	case PlatformStatsStatePending:
+		return true
+	case PlatformStatsStateReady:
+		return true
+	case PlatformStatsStateUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostKind.
 const (
 	Text  PostKind = "text"
@@ -57,28 +78,28 @@ func (e PostKind) Valid() bool {
 
 // Defines values for PostStatus.
 const (
-	PostStatusDraft              PostStatus = "draft"
-	PostStatusFailed             PostStatus = "failed"
-	PostStatusPartiallyPublished PostStatus = "partially_published"
-	PostStatusPublished          PostStatus = "published"
-	PostStatusPublishing         PostStatus = "publishing"
-	PostStatusScheduled          PostStatus = "scheduled"
+	Draft              PostStatus = "draft"
+	Failed             PostStatus = "failed"
+	PartiallyPublished PostStatus = "partially_published"
+	Published          PostStatus = "published"
+	Publishing         PostStatus = "publishing"
+	Scheduled          PostStatus = "scheduled"
 )
 
 // Valid indicates whether the value is a known member of the PostStatus enum.
 func (e PostStatus) Valid() bool {
 	switch e {
-	case PostStatusDraft:
+	case Draft:
 		return true
-	case PostStatusFailed:
+	case Failed:
 		return true
-	case PostStatusPartiallyPublished:
+	case PartiallyPublished:
 		return true
-	case PostStatusPublished:
+	case Published:
 		return true
-	case PostStatusPublishing:
+	case Publishing:
 		return true
-	case PostStatusScheduled:
+	case Scheduled:
 		return true
 	default:
 		return false
@@ -143,8 +164,35 @@ type Media struct {
 	SizeBytes *int64  `json:"size_bytes,omitempty"`
 }
 
+// Metrics defines model for Metrics.
+type Metrics struct {
+	Clicks         *float32 `json:"clicks,omitempty"`
+	Comments       *float32 `json:"comments,omitempty"`
+	EngagementRate *float32 `json:"engagement_rate,omitempty"`
+	Impressions    *float32 `json:"impressions,omitempty"`
+	Likes          *float32 `json:"likes,omitempty"`
+	Reach          *float32 `json:"reach,omitempty"`
+	Saves          *float32 `json:"saves,omitempty"`
+	Shares         *float32 `json:"shares,omitempty"`
+	Views          *float32 `json:"views,omitempty"`
+}
+
 // Platform defines model for Platform.
 type Platform string
+
+// PlatformStats defines model for PlatformStats.
+type PlatformStats struct {
+	LastUpdated *string            `json:"last_updated,omitempty"`
+	Message     *string            `json:"message,omitempty"`
+	Metrics     *Metrics           `json:"metrics,omitempty"`
+	Platform    Platform           `json:"platform"`
+	State       PlatformStatsState `json:"state"`
+	Url         *string            `json:"url,omitempty"`
+	Username    *string            `json:"username,omitempty"`
+}
+
+// PlatformStatsState defines model for PlatformStats.State.
+type PlatformStatsState string
 
 // Post defines model for Post.
 type Post struct {
@@ -161,6 +209,13 @@ type Post struct {
 
 // PostKind defines model for PostKind.
 type PostKind string
+
+// PostStats defines model for PostStats.
+type PostStats struct {
+	Platforms []PlatformStats `json:"platforms"`
+	PostId    string          `json:"post_id"`
+	Totals    *Metrics        `json:"totals,omitempty"`
+}
 
 // PostStatus defines model for PostStatus.
 type PostStatus string
@@ -243,6 +298,9 @@ type ServerInterface interface {
 	// Publish post
 	// (POST /v1/posts/{post_id}/publish)
 	PublishPost(w http.ResponseWriter, r *http.Request, postId string)
+	// Get post stats
+	// (GET /v1/posts/{post_id}/stats)
+	GetPostStats(w http.ResponseWriter, r *http.Request, postId string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -306,6 +364,12 @@ func (_ Unimplemented) UploadVideo(w http.ResponseWriter, r *http.Request, postI
 // Publish post
 // (POST /v1/posts/{post_id}/publish)
 func (_ Unimplemented) PublishPost(w http.ResponseWriter, r *http.Request, postId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get post stats
+// (GET /v1/posts/{post_id}/stats)
+func (_ Unimplemented) GetPostStats(w http.ResponseWriter, r *http.Request, postId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -551,6 +615,31 @@ func (siw *ServerInterfaceWrapper) PublishPost(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetPostStats operation middleware
+func (siw *ServerInterfaceWrapper) GetPostStats(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "post_id" -------------
+	var postId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "post_id", chi.URLParam(r, "post_id"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "post_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPostStats(w, r, postId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -693,6 +782,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1/posts/{post_id}/publish", wrapper.PublishPost)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1/posts/{post_id}/stats", wrapper.GetPostStats)
 	})
 
 	return r

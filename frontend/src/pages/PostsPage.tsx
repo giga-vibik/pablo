@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import PlatformIcon from '../components/PlatformIcon'
 import PlatformMarks from '../components/PlatformMarks'
+import StatsModal from '../components/StatsModal'
 import { deletePost, listPosts, publishPost } from '../api'
-import type { Post } from '../types'
+import { PLATFORM_COLORS, PLATFORM_SHORT, type Platform, type Post } from '../types'
+
+const FILTER_PLATFORMS: Platform[] = ['instagram', 'tiktok', 'youtube', 'threads']
 
 const STATUS_LABEL: Record<Post['status'], string> = {
   draft: 'Черновик',
@@ -19,6 +23,8 @@ export default function PostsPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [busyID, setBusyID] = useState('')
+  const [filter, setFilter] = useState<Platform | 'all'>('all')
+  const [statsFor, setStatsFor] = useState('')
 
   const load = async () => {
     setError('')
@@ -63,13 +69,23 @@ export default function PostsPage() {
     }
   }
 
+  // Пост уезжает в несколько площадок сразу, поэтому это фильтр, а не разбиение
+  // на колонки: в колонках один и тот же пост дублировался бы в каждой.
+  const countFor = (platform: Platform) =>
+    posts.filter((p) => p.targets.some((t) => t.platform === platform)).length
+
+  const visible =
+    filter === 'all'
+      ? posts
+      : posts.filter((p) => p.targets.some((t) => t.platform === filter))
+
   return (
     <>
       <div className="page-header">
         <div>
           <h1 className="title">Лента</h1>
           <p className="subtitle">
-            {loading ? 'Загружаем…' : `${posts.length} ${plural(posts.length)}`}
+            {loading ? 'Загружаем…' : `${visible.length} ${plural(visible.length)}`}
           </p>
         </div>
 
@@ -77,6 +93,36 @@ export default function PostsPage() {
           <button className="primary">Новый пост</button>
         </Link>
       </div>
+
+      {!loading && posts.length > 0 && (
+        <div className="filters">
+          <button
+            className={`filter ${filter === 'all' ? 'on' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            Все <span className="count">{posts.length}</span>
+          </button>
+
+          {FILTER_PLATFORMS.map((platform) => {
+            const count = countFor(platform)
+
+            return (
+              <button
+                key={platform}
+                className={`filter ${filter === platform ? 'on' : ''}`}
+                style={{ ['--filter-color' as string]: PLATFORM_COLORS[platform] }}
+                onClick={() => setFilter(platform)}
+                disabled={count === 0}
+              >
+                <span className="filter-icon">
+                  <PlatformIcon platform={platform} />
+                </span>
+                {PLATFORM_SHORT[platform]} <span className="count">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {error && <div className="banner">{error}</div>}
 
@@ -100,19 +146,29 @@ export default function PostsPage() {
         </div>
       )}
 
-      {!loading && posts.length > 0 && (
+      {!loading && posts.length > 0 && visible.length === 0 && (
+        <div className="empty">
+          <h3>Здесь пусто</h3>
+          <div>В эту площадку пока ничего не публиковалось</div>
+        </div>
+      )}
+
+      {!loading && visible.length > 0 && (
         <div className="grid">
-          {posts.map((post) => (
+          {visible.map((post) => (
             <PostTile
               key={post.id}
               post={post}
               busy={busyID === post.id}
               onPublish={() => onPublish(post.id)}
               onDelete={() => onDelete(post.id)}
+              onStats={() => setStatsFor(post.id)}
             />
           ))}
         </div>
       )}
+
+      {statsFor && <StatsModal postId={statsFor} onClose={() => setStatsFor('')} />}
     </>
   )
 }
@@ -122,9 +178,10 @@ interface TileProps {
   busy: boolean
   onPublish: () => void
   onDelete: () => void
+  onStats: () => void
 }
 
-function PostTile({ post, busy, onPublish, onDelete }: TileProps) {
+function PostTile({ post, busy, onPublish, onDelete, onStats }: TileProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const video = post.media?.[0]
 
@@ -186,6 +243,13 @@ function PostTile({ post, busy, onPublish, onDelete }: TileProps) {
           )}
         </span>
       </div>
+
+      {/* Статистика есть только у того, что уже ушло в площадку. */}
+      {hasStats(post) && (
+        <button className="stats-btn" onClick={onStats}>
+          Статистика
+        </button>
+      )}
     </div>
   )
 }
@@ -200,6 +264,10 @@ function formatWhen(post: Post): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function hasStats(post: Post): boolean {
+  return post.targets.some((t) => t.status === 'published' || t.status === 'publishing')
 }
 
 function failureReason(post: Post): string {

@@ -51,6 +51,7 @@ type ZernioClient interface {
 	IsConfigured() bool
 	ResolveAccountID(ctx context.Context, platform string) (string, error)
 	Post(ctx context.Context, req zernio.PostRequest) (zernio.PostResult, error)
+	GetPostAnalytics(ctx context.Context, postID string) (zernio.PostAnalytics, error)
 }
 
 type PostService interface {
@@ -64,6 +65,8 @@ type PostService interface {
 	ListDuePosts(ctx context.Context, limit int) ([]postDomain.Post, error)
 	// FailPost помечает пост упавшим.
 	FailPost(ctx context.Context, postID postDomain.PostID) error
+	// GetPostStats тянет статистику поста из zernio, см. stats.go.
+	GetPostStats(ctx context.Context, postID postDomain.PostID) (PostStats, error)
 }
 
 type service struct {

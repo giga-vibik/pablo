@@ -493,6 +493,216 @@ textarea {
   color: var(--text);
 }
 
+/* ── Фильтр по площадкам ────────────────────────────────────────────── */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.filter {
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.filter .filter-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--filter-color, var(--ink));
+}
+
+.filter .filter-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.filter .count {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Активный фильтр красится в цвет площадки — он же и есть выбранная площадка. */
+.filter.on {
+  background: var(--filter-color, var(--ink));
+  border-color: var(--filter-color, var(--ink));
+  color: #fff;
+}
+
+.filter.on .filter-icon,
+.filter.on .count {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.filter:disabled {
+  opacity: 0.4;
+}
+
+.stats-btn {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.stats-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* ── Поп-ап статистики ──────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(22, 21, 15, 0.35);
+  backdrop-filter: blur(3px);
+  animation: fade 0.14s ease-out;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+
+.modal-body {
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.totals {
+  padding-bottom: 18px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.totals-head {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 12px 10px;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics.big .metric-value {
+  font-size: 24px;
+}
+
+.metric-label {
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.stat-block {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat-name {
+  font-weight: 560;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.stat-link {
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.stat-link:hover {
+  color: var(--text);
+}
+
+.stat-note {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.stat-note.pending {
+  color: var(--warn);
+}
+
+.stat-note.unavailable {
+  color: var(--err);
+}
+
 /* ── Значки площадок ────────────────────────────────────────────────── */
 
 .platform-marks {

@@ -227,6 +227,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /v1/posts/{post_id}/stats:
+    get:
+      tags:
+        - posts
+      description: Статистика поста по площадкам из zernio
+      summary: Get post stats
+      operationId: GetPostStats
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostStats"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /v1/posts/{post_id}/media:
     post:
       tags:
@@ -512,6 +545,70 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Media"
+
+    Metrics:
+      type: object
+      properties:
+        impressions:
+          type: number
+        reach:
+          type: number
+        views:
+          type: number
+        likes:
+          type: number
+        comments:
+          type: number
+        shares:
+          type: number
+        saves:
+          type: number
+        clicks:
+          type: number
+        engagement_rate:
+          type: number
+
+    PlatformStats:
+      type: object
+      required:
+        - platform
+        - state
+      properties:
+        platform:
+          $ref: "#/components/schemas/Platform"
+        # ready — цифры пришли, pending — zernio ещё синхронизирует,
+        # unavailable — публикация не удалась. Нули без state неотличимы от «нет данных».
+        state:
+          type: string
+          enum:
+            - ready
+            - pending
+            - unavailable
+        message:
+          type: string
+        username:
+          type: string
+        url:
+          type: string
+        last_updated:
+          type: string
+        metrics:
+          $ref: "#/components/schemas/Metrics"
+
+    PostStats:
+      type: object
+      required:
+        - post_id
+        - platforms
+      properties:
+        post_id:
+          type: string
+        totals:
+          $ref: "#/components/schemas/Metrics"
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformStats"
 
     Account:
       type: object
